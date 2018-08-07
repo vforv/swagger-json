@@ -65,9 +65,7 @@ class Swagger {
                 "name": "body",
                 "description": "Pet object that needs to be added to the store",
                 "required": true,
-                "schema": {
-                    "$ref": `#/definitions/${name}`
-                }
+                ...toSwagger.properties.body
             })
         }
 
