@@ -2,8 +2,23 @@ const fs = require('fs');
 const joi = require('joi');
 const swaggerJson = require('./swagger-json');
 const j2s = require('joi-to-swagger');
+let singleton = undefined;
 
 class Swagger {
+    constructor() {
+
+    }
+
+    static instance() {
+        if (!singleton) {
+            singleton = new Swagger();
+            singleton.currentRoute = [];
+            return singleton;
+        }
+
+        return this;
+    }
+
     createJsonDoc(info, host, basePath) {
         let swaggerData = swaggerJson.get;
 
@@ -27,11 +42,18 @@ class Swagger {
                 basePath
             }
         }
-        
+
         return fs.writeFileSync('swagger.json', JSON.stringify(swaggerData));
     }
 
     addNewRoute(joiDefinistions, path, method) {
+
+        if (this.currentRoute.includes(path + method)) {
+            return false;
+        }
+
+        this.currentRoute.push(path + method);
+
         const swaggerData = fs.readFileSync('swagger.json', 'utf-8');
         const { definitions, paths, ...otherData } = JSON.parse(swaggerData);
         const name = joiDefinistions.model || Date.now();
@@ -141,4 +163,4 @@ class Swagger {
     }
 };
 
-exports.swaggerDoc = new Swagger();
+exports.swaggerDoc = Swagger.instance();

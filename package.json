@@ -1,6 +1,6 @@
 {
   "name": "swagger-json",
-  "version": "1.2.3",
+  "version": "1.2.4",
   "description": "Create json doc for swagger",
   "main": "index.js",
   "directories": {
