@@ -13,6 +13,8 @@ class Swagger {
         if (!singleton) {
             singleton = new Swagger();
             singleton.currentRoute = [];
+            singleton.paths = {};
+            singleton.definitions = {};
             return singleton;
         }
 
@@ -49,19 +51,21 @@ class Swagger {
     addNewRoute(joiDefinistions, path, method) {
 
         if (this.currentRoute.includes(path + method)) {
+
             return false;
         }
 
         this.currentRoute.push(path + method);
 
         const swaggerData = fs.readFileSync('swagger.json', 'utf-8');
-        const { definitions, paths, ...otherData } = JSON.parse(swaggerData);
+        const otherData = JSON.parse(swaggerData);
         const name = joiDefinistions.model || Date.now();
         const toSwagger = j2s(joiDefinistions).swagger;
-
-        const updatedDefinitions = {
-            ...definitions,
-            [name]: toSwagger
+        if (toSwagger && toSwagger.properties && toSwagger.properties.body) {
+            this.definitions = {
+                ...this.definitions,
+                [name]: toSwagger.properties.body
+            }
         }
 
         const pathArray = path.split(':');
@@ -85,9 +89,10 @@ class Swagger {
             parameters.push({
                 "in": "body",
                 "name": "body",
-                "description": "Pet object that needs to be added to the store",
-                "required": true,
-                ...toSwagger.properties.body
+                // ...toSwagger.properties.body
+                "schema": {
+                    "$ref": `#/definitions/${name}`
+                }
             })
         }
 
@@ -104,8 +109,6 @@ class Swagger {
                 parameters.push({
                     "name": param,
                     "in": "path",
-                    "description": "ID of pet to return",
-                    "required": true,
                     ...toSwagger.properties.params.properties[param]
                 })
             })
@@ -119,8 +122,6 @@ class Swagger {
                 parameters.push({
                     "in": "query",
                     "name": key,
-                    "description": "Pet object that needs to be added to the store",
-                    "required": true,
                     ...toSwagger.properties.query.properties[key]
                 })
             })
@@ -132,15 +133,14 @@ class Swagger {
                 parameters.push({
                     "in": "header",
                     "name": key,
-                    "description": "Pet object that needs to be added to the store",
-                    "required": true,
                     ...toSwagger.properties.headers.properties[key]
                 })
             })
         }
-        const updatePaths = {
-            ...paths,
-            [transformPath]: {
+
+        if (this.paths && this.paths[transformPath]) {
+            this.paths[transformPath] = {
+                ...this.paths[transformPath],
                 [method]: {
                     responses:
                         {
@@ -151,12 +151,27 @@ class Swagger {
                     parameters,
                 }
             }
+        } else {
+            this.paths = {
+                ...this.paths,
+                [transformPath]: {
+                    [method]: {
+                        responses:
+                            {
+                                200: {
+                                    description: "success"
+                                }
+                            },
+                        parameters,
+                    }
+                }
+            }
         }
 
         const newData = {
             ...otherData,
-            definitions: updatedDefinitions,
-            paths: updatePaths
+            definitions: this.definitions,
+            paths: this.paths
         }
 
         return fs.writeFileSync('swagger.json', JSON.stringify(newData));
