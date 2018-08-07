@@ -60,6 +60,9 @@ class Swagger {
         const swaggerData = fs.readFileSync('swagger.json', 'utf-8');
         const otherData = JSON.parse(swaggerData);
         const name = joiDefinistions.model || Date.now();
+        const tag = joiDefinistions.group || 'default';
+        const summary = joiDefinistions.description || 'No desc';
+
         const toSwagger = j2s(joiDefinistions).swagger;
         if (toSwagger && toSwagger.properties && toSwagger.properties.body) {
             this.definitions = {
@@ -142,6 +145,10 @@ class Swagger {
             this.paths[transformPath] = {
                 ...this.paths[transformPath],
                 [method]: {
+                    "tags": [
+                        tag
+                    ],
+                    summary,
                     responses:
                         {
                             200: {
@@ -156,6 +163,10 @@ class Swagger {
                 ...this.paths,
                 [transformPath]: {
                     [method]: {
+                        "tags": [
+                            tag
+                        ],
+                        summary,
                         responses:
                             {
                                 200: {
