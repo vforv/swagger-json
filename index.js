@@ -71,16 +71,13 @@ class Swagger {
             }
         }
 
-        const pathArray = path.split(':');
+        const pathArray = path.split('/').filter(Boolean);
         const transformPath = pathArray.map((path) => {
-            if (path != pathArray[0]) {
-                if (path.substr(path.length - 1) === '/') {
-                    return `{${path.slice(0, -1)}}/`;
-                }
-                return `{${path}}`;
+            if (path.charAt(0) === ':') {
+                return `/{${path.substr(1)}}`;
             }
 
-            return path;
+            return `/${path}`;
         })
             .join('');
 
