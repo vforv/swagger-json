@@ -1,133 +1,208 @@
-// var request = require('supertest');
-// var expect = require('chai').expect;
-// var Joi = require('joi');
-// var app = require('express')();
-// var BodyParser = require('body-parser');
-// var Validate = require('../');
+const expect = require('chai').expect;
+const { describe, it, before } = require('mocha');
+const joi = require('joi');
+const { swaggerDoc } = require('../');
+const info = {
+  version: '1.0.0',
+  title: 'dummy api',
+  description: 'an example api',
+};
+swaggerDoc.createJsonDoc(info, 'http://localhost:4000', '/');
 
-// app.use(BodyParser.json());
+describe('adding a new GET route', () => {
+  const schema = {
+    query: joi.object({
+      id: joi.number().integer().required().description("user's id"),
+    }),
+    description: 'get user by id',
+  };
 
-// var querySchema = {
-//   query: {
-//     limit: Joi.number().default(20),
-//     offset: Joi.number().default(20)
-//   }
-// };
-// var paramsSchema = {
-//   params: {
-//     id: Joi.number().required()
-//   }
-// };
-// var bodySchema = {
-//   body: {
-//     name: Joi.string().required()
-//   }
-// };
+  const { paths } = swaggerDoc.addNewRoute(schema, '/v1/user', 'get');
+  const userPath = paths['/v1/user'];
 
-// var headersSchema = {
-//   params: {
-//     id: Joi.string().required()
-//   },
-//   headers: {
-//     authorization: Joi.string().required()
-//   }
-// };
+  it('should use the description to build a summary', async () => {
+    expect(userPath.get.summary).to.equal('get user by id');
+  });
 
-// app.get('/users/one/:id', Validate(headersSchema), function (req, res, next) {
-//   res.send({
-//     ...req.headers,
-//     id: req.params.id
-//   });
-// });
+  it('should have a default tag', async () => {
+    expect(userPath.get.tags).to.deep.equal(['default']);
+  });
 
-// app.get('/users', Validate(querySchema), function (req, res, next) {
-//   res.send(req.query);
-// });
+  it('should map a default response', async () => {
+    expect(userPath.get.responses).to.deep.equal({
+      '200': {
+        description: 'success',
+      },
+    });
+  });
 
-// app.get('/users/:id', Validate(paramsSchema), function (req, res, next) {
-//   res.send(req.params);
-// });
+  it('should map query parameters to parameters', () => {
+    const queryParams = userPath.get.parameters.filter(x => x.in === 'query');
+    expect(queryParams).to.deep.equal([{
+      in: 'query',
+      name: 'id',
+      type: 'integer',
+      description: "user's id",
+    }]);
+  });
 
-// app.post('/users', Validate(bodySchema), function (req, res, next) {
-//   res.send(req.body);
-// });
+  it('should prevent me from adding a duplicate path', () => {
+    const result = swaggerDoc.addNewRoute(schema, '/v1/user', 'get');
+    expect(result).to.equal(false);
+  });
 
-// app.get('/', Validate(), function (req, res, next) {
-//   res.send();
-// });
+  it('should transform express path params to swagger path params', async () => {
+    const schema = {
+      query: joi.object({
+        id: joi.number().integer().required().description("id of the post to retreive"),
+      }),
+    };
 
-// // Error handling middleware to make sure the response passed back
-// app.use(function (err, req, res, next) {
-//   res.status(err.output.statusCode).send(err.output.payload);
-// });
+    const { paths } = swaggerDoc.addNewRoute(schema, '/user/:userId/auth_token', 'post');
 
-// describe('express-joi-validator tests', function () {
+    expect(Object.keys(paths)).to.include('/user/{userId}/auth_token');
+  });
+});
 
-//   it('should return 400 bad request if the url param is invalid', function (done) {
-//     request(app)
-//       .get('/users/jack')
-//       .expect(400)
-//       .expect(function (res) {
-//         expect(res.body.statusCode).to.equal(400);
-//         expect(res.body.error).to.equal('Bad Request');
-//         expect(res.body.message).to.match(/"id" must be a number/);
-//       })
-//       .end(done);
-//   });
+describe('adding a new POST route', () => {
+  const schema = {
+    params: joi.object({
+      organization: joi.number().integer().required().description("user's organization"),
+    }),
+    body: joi.object({
+      firstName: joi.string().required().description('first name for the user'),
+      lastName: joi.string().required().description('last name for the user'),
+      email: joi.string().email().required().description('you gunna get spammed'),
+    }).meta({ modelName: 'userModel' }),
+    headers: joi.object({
+      'Content-Type': joi.string().default('application/json').optional(),
+    }),
+    description: 'create a user',
+  };
 
-//   it('should return 400 bad request if the query param is invalid', function (done) {
-//     request(app)
-//       .get('/users?limit=ten')
-//       .expect(400)
-//       .expect(function (res) {
-//         expect(res.body.statusCode).to.equal(400);
-//         expect(res.body.error).to.equal('Bad Request');
-//         expect(res.body.message).to.match(/"limit" must be a number/);
-//       })
-//       .end(done);
-//   });
+  const { paths, definitions } = swaggerDoc.addNewRoute(schema, '/{organization}/create-user', 'post');
+  const postPath = paths['/{organization}/create-user'];
 
-//   it('should return 400 bad request if the POST\'d body is invalid', function (done) {
-//     request(app)
-//       .post('/users')
-//       .expect(400)
-//       .expect(function (res) {
-//         expect(res.body.statusCode).to.equal(400);
-//         expect(res.body.error).to.equal('Bad Request');
-//         expect(res.body.message).to.match(/"name" is required/);
-//       })
-//       .end(done);
-//   });
+  it('should map params to path parameters', async () => {
+    const pathParams = postPath.post.parameters.filter(x => x.in === 'path');
 
-//   it('should return 200 if the query param is valid and override the default values if specified', function (done) {
-//     request(app)
-//       .get('/users?limit=10')
-//       .expect(200)
-//       .expect(function (res) {
-//         expect(res.body.limit).to.equal(10);
-//         expect(res.body.offset).to.equal(20);
-//       })
-//       .end(done);
-//   });
+    expect(pathParams).to.deep.equal([{
+      in: 'path',
+      name: 'organization',
+      type: 'integer',
+      description: "user's organization",
+    }]);
+  });
 
-//   it('should return 200 even if there\'s no schema to validate', function (done) {
-//     request(app)
-//       .get('/')
-//       .expect(200)
-//       .end(done);
-//   });
+  it('should map body params to body parameters', async () => {
+    const bodyParams = postPath.post.parameters.filter(x => x.in === 'body');
 
-//   it('should return 200 for header validation', function (done) {
-//     request(app)
-//       .get('/users/one/first')
-//       .set('Authorization', 'abc123')
-//       .expect(200)
-//       .expect(function (res) {
-//         expect(res.body.authorization).to.equal('abc123');
-//         expect(res.body.id).to.equal('first');
-//       })
-//       .end(done);
-//   });
-// });
+    expect(bodyParams).to.deep.equal([{
+      in: 'body',
+      name: 'body',
+      schema: {
+        $ref: '#/definitions/userModel',
+      }
+    }]);
+  });
 
+  it('should have created a model definition for the body', async () => {
+    expect(definitions.userModel).to.deep.equal({
+      type: 'object',
+      required: [
+        'firstName',
+        'lastName',
+        'email',
+      ],
+      properties: {
+        firstName: {
+          type: 'string',
+          description: 'first name for the user'
+        },
+        lastName: {
+          type: 'string',
+          description: 'last name for the user'
+        },
+        email: {
+          type: 'string',
+          format: 'email',
+          description: 'you gunna get spammed'
+        }
+      }
+    });
+  });
 
+  it('should be able to map headers', async () => {
+    const headerParams = postPath.post.parameters.filter(x => x.in === 'header');
+    expect(headerParams).to.deep.equal([{
+      in: 'header',
+      name: 'Content-Type',
+      type: 'string',
+      default: 'application/json',
+    }]);
+  });
+
+  it('should create a default model name if one was not provided', async () => {
+    const schema = {
+      body: joi.object({
+        firstName: joi.string()
+      }),
+    };
+    const { paths, definitions } = swaggerDoc.addNewRoute(schema, '/create-person', 'post');
+    expect(paths['/create-person'].post.parameters[0].schema.$ref).to.match(/\#\/definitions\/\d+/);
+
+    const ref = paths['/create-person'].post.parameters[0].schema.$ref.split('/');
+    const modelName = ref[ref.length-1];
+
+    expect(definitions[modelName]).to.deep.equal({
+      type: 'object',
+      properties: {
+        firstName: { type: 'string' },
+      },
+    });
+  });
+});
+
+describe('describing an output model', () => {
+  const schema = {
+    query: joi.object({
+      id: joi.number().integer().required().description("id of the post to retreive"),
+    }),
+    description: 'get post by id',
+    response: joi.object({ name: joi.string(), content: joi.string() }).meta({ modelName: 'blogPost' }),
+  };
+  const { paths, definitions } = swaggerDoc.addNewRoute(schema, '/posts/:id', 'get');
+  const getPostPath = paths['/posts/{id}'];
+
+  it("should add a model reference to describe the path's output schema", async () => {
+    expect(getPostPath.get.responses['200']).to.deep.equal({
+      description: 'success',
+      schema: { $ref: '#/definitions/blogPost' },
+    });
+  });
+
+  it('should have created a definition for the output model', async () => {
+    expect(definitions.blogPost).to.deep.equal({
+      type: 'object',
+      properties: {
+        content: { type: 'string' },
+        name: { type: 'string' },
+      },
+    });
+  });
+
+  it('should create a default model name if one was not provided', async () => {
+    const schema = {
+      response: joi.object({ name: joi.string(), content: joi.string() }),
+    };
+    const { paths, definitions } = swaggerDoc.addNewRoute(schema, '/runningoutofpathnames', 'get');
+    const path = paths['/runningoutofpathnames'];
+
+    expect(path.get.responses[200].schema.$ref).to.match(/\#\/definitions\/\d+/);
+
+    const ref = paths['/runningoutofpathnames'].get.responses[200].schema.$ref.split('/');
+    const modelName = ref[ref.length-1];
+
+    expect(Object.keys(definitions)).to.include(modelName);
+  });
+});
