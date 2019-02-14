@@ -66,6 +66,8 @@ class Swagger {
       ...(info && { info }),
       ...(host && { host }),
       ...(basePath && { basePath }),
+      definitions: this.definitions,
+      paths: this.paths,
     };
 
     return this.output;
@@ -115,7 +117,6 @@ class Swagger {
 
     this.currentRoute.push(path + method);
 
-    const otherData = this.output;
     const name = joiDefinitions.model || Date.now();
     const tag = joiDefinitions.group || 'default';
     const summary = joiDefinitions.description || 'No desc';
@@ -174,7 +175,7 @@ class Swagger {
     this.addPaths(transformPath, method, tag, summary, parameters, responses);
 
     this.output = {
-      ...otherData,
+      ...this.output,
       definitions: this.definitions,
       paths: this.paths,
     };

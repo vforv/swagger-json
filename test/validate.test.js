@@ -206,3 +206,20 @@ describe('describing an output model', () => {
     expect(Object.keys(definitions)).to.include(modelName);
   });
 });
+
+describe('#createJsonDoc', () => {
+  it('should be able to be called at the very end', async () => {
+    const schema = {
+      query: joi.object({
+        id: joi.number().integer().required().description("id of the post to retreive"),
+      }),
+      description: 'get post by id',
+      response: joi.object({ name: joi.string(), content: joi.string() }).meta({ modelName: 'blogPost' }),
+    };
+
+    const addNewRouteOutput = swaggerDoc.addNewRoute(schema, '/swagger/examples', 'get');
+    const createJsonDocOutput = swaggerDoc.createJsonDoc(info, 'http://localhost:4000', '/');
+
+    expect(addNewRouteOutput).to.deep.equal(createJsonDocOutput);
+  });
+});
