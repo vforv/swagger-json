@@ -84,6 +84,7 @@ class Swagger {
     this.paths = {
       ...this.paths,
       [transformPath]: {
+        ...this.paths[transformPath],
         [method]: {
           tags: [
             tag,
