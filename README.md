@@ -11,7 +11,6 @@ npm install swagger-json
 ## Usage
 
 ```javascript
-const fs = require('fs');
 const { swaggerDoc } = require('swagger-json');
 const Joi = require('joi');
 
@@ -30,6 +29,9 @@ const info = {
   }
 };
 
+// This will generate initial doc
+swaggerDoc.createJsonDoc(info, host, basePath);
+
 const joiSchema = {
   body: Joi.object({
     email: Joi.string().email().required().description('Email address for new user').example('vladimir@gmail.com'),
@@ -37,7 +39,7 @@ const joiSchema = {
     salt: Joi.string().required().description('Salt for new user').example('asdsdgdsafs324eqwedagsdfafsdf')
   }).meta({ modelName: 'Register' }),
   headers: Joi.object({
-    authorization: Validaiton.tokenValidation.string().token().required().description('Auth tokne').example('asdasfadfasdsasdas')
+    authorization: Validation.tokenValidation.string().token().required().description('Auth token').example('asdasfadfasdsasdas')
   }),
   group: 'Register routes',
   description: 'Route to register user to the system'
@@ -46,9 +48,17 @@ const joiSchema = {
 // create a new route
 swaggerDoc.addNewRoute(joiSchema, '/v1/user/register', 'post');
 
-// get the swagger doc returned as an object
-const swaggerSpec = swaggerDoc.createJsonDoc(info, host, basePath);
+// your swagger json file will have been written to "swagger.json"
+```
 
-// now you can write it to the file system or do something else like servie it from express, etc.
-fs.write('swagger.json', JSON.stringify(swaggerSpec));
+## Usage without writing the swagger.json file to the file system
+
+```javascript
+// use swaggerDocJson instead of swaggerDoc from the swagger-json module
+const { swaggerDocJson } = require('swagger-json');
+
+// using the same joiSchema, info, host, and basePath as the above example.
+swaggerDocJson.addNewRoute(joiSchema, '/v1/user/register', 'post');
+
+const swaggerSpec = swaggerDocJson.createJsonDoc(info, host, basePath);
 ```

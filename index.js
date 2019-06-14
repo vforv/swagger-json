@@ -1,4 +1,5 @@
 /* eslint no-underscore-dangle: off */
+const fs = require('fs');
 const j2s = require('joi-to-swagger');
 const defaultConfig = require('./default_config');
 
@@ -53,11 +54,12 @@ const addHeaders = (_transformPath, parameters, toSwagger) => {
 };
 
 class Swagger {
-  constructor() {
+  constructor(writeToFile) {
     this.currentRoute = [];
     this.paths = {};
     this.definitions = {};
     this.output = null;
+    this.writeToFile = writeToFile;
   }
 
   createJsonDoc(info, host, basePath) {
@@ -69,6 +71,10 @@ class Swagger {
       definitions: this.definitions,
       paths: this.paths,
     };
+
+    if (this.writeToFile) {
+      return fs.writeFileSync('swagger.json', JSON.stringify(this.output));
+    }
 
     return this.output;
   }
@@ -181,8 +187,20 @@ class Swagger {
       paths: this.paths,
     };
 
+    if (this.writeToFile) {
+      return fs.writeFileSync('swagger.json', JSON.stringify(this.output));
+    }
+
     return this.output;
   }
 }
 
-exports.swaggerDoc = new Swagger();
+module.exports = {
+  get swaggerDoc() {
+    return new Swagger(true);
+  },
+
+  get swaggerDocJson() {
+    return new Swagger(false);
+  }
+};
