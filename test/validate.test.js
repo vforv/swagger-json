@@ -54,7 +54,7 @@ describe('adding a new GET route', () => {
   it('should transform express path params to swagger path params', async () => {
     const schema = {
       query: joi.object({
-        id: joi.number().integer().required().description("id of the post to retreive"),
+        id: joi.number().integer().required().description("id of the post to retrieve"),
       }),
     };
 
@@ -163,10 +163,38 @@ describe('adding a new POST route', () => {
   });
 });
 
+describe('adding a POST route with the same path as an exiting GET route', () => {
+  const postSchema = {
+    body: joi.object({
+      firstName: joi.string().required().description('first name for the user'),
+      lastName: joi.string().required().description('last name for the user'),
+    }).meta({ modelName: 'superUserModel' }),
+    headers: joi.object({
+      'Content-Type': joi.string().default('application/json').optional(),
+    }),
+    description: 'create a super user',
+  };
+
+  const getSchema = {
+    headers: joi.object({
+      'Content-Type': joi.string().default('application/json').optional(),
+    }),
+    description: 'get the super user',
+  }
+
+  swaggerDoc.addNewRoute(getSchema, '/super-user', 'get');
+  const { paths } = swaggerDoc.addNewRoute(postSchema, '/super-user', 'post');
+
+  it('should have added the post path without overwriting the get', () => {
+    expect(paths['/super-user'].post.summary).to.equal('create a super user');
+    expect(paths['/super-user'].get.summary).to.equal('get the super user');
+  });
+});
+
 describe('describing an output model', () => {
   const schema = {
     query: joi.object({
-      id: joi.number().integer().required().description("id of the post to retreive"),
+      id: joi.number().integer().required().description("id of the post to retrieve"),
     }),
     description: 'get post by id',
     response: joi.object({ name: joi.string(), content: joi.string() }).meta({ modelName: 'blogPost' }),
@@ -195,12 +223,12 @@ describe('describing an output model', () => {
     const schema = {
       response: joi.object({ name: joi.string(), content: joi.string() }),
     };
-    const { paths, definitions } = swaggerDoc.addNewRoute(schema, '/runningoutofpathnames', 'get');
-    const path = paths['/runningoutofpathnames'];
+    const { paths, definitions } = swaggerDoc.addNewRoute(schema, '/runningOutOfPathNames', 'get');
+    const path = paths['/runningOutOfPathNames'];
 
     expect(path.get.responses[200].schema.$ref).to.match(/\#\/definitions\/\d+/);
 
-    const ref = paths['/runningoutofpathnames'].get.responses[200].schema.$ref.split('/');
+    const ref = paths['/runningOutOfPathNames'].get.responses[200].schema.$ref.split('/');
     const modelName = ref[ref.length-1];
 
     expect(Object.keys(definitions)).to.include(modelName);
@@ -211,7 +239,7 @@ describe('#createJsonDoc', () => {
   it('should be able to be called at the very end', async () => {
     const schema = {
       query: joi.object({
-        id: joi.number().integer().required().description("id of the post to retreive"),
+        id: joi.number().integer().required().description("id of the post to retrieve"),
       }),
       description: 'get post by id',
       response: joi.object({ name: joi.string(), content: joi.string() }).meta({ modelName: 'blogPost' }),
