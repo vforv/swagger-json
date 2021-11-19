@@ -1,6 +1,6 @@
 language: javascript
 node_js:
-  - 10.4.0
+  - 14.17.6
 after_success: npm run coverage
 script:
   - npm i
