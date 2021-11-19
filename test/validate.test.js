@@ -181,6 +181,7 @@ describe("swaggerDocJson", () => {
 
     it("should have created a model definition for the body", async () => {
       expect(definitions.userModel).to.deep.equal({
+        additionalProperties: false,
         type: "object",
         required: ["firstName", "lastName", "email"],
         properties: {
@@ -235,6 +236,7 @@ describe("swaggerDocJson", () => {
       const modelName = ref[ref.length - 1];
 
       expect(definitions[modelName]).to.deep.equal({
+        additionalProperties: false,
         type: "object",
         properties: {
           firstName: { type: "string" },
@@ -313,6 +315,7 @@ describe("swaggerDocJson", () => {
 
     it("should have created a definition for the output model", async () => {
       expect(definitions.blogPost).to.deep.equal({
+        additionalProperties: false,
         type: "object",
         properties: {
           content: { type: "string" },

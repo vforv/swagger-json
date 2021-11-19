@@ -4,10 +4,10 @@ const j2s = require("joi-to-swagger");
 const defaultConfig = require("./default_config");
 
 const getMetaValue = (joiDefinitions, key) => {
-  if (joiDefinitions && joiDefinitions._meta) {
+  if (joiDefinitions && joiDefinitions.$_terms.metas) {
     const flattened = Object.assign.apply(
       null,
-      [{}].concat(joiDefinitions._meta)
+      [{}].concat(joiDefinitions.$_terms.metas)
     );
     return flattened[key];
   }
