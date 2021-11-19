@@ -1,11 +1,14 @@
 /* eslint no-underscore-dangle: off */
-const fs = require('fs');
-const j2s = require('joi-to-swagger');
-const defaultConfig = require('./default_config');
+const fs = require("fs");
+const j2s = require("joi-to-swagger");
+const defaultConfig = require("./default_config");
 
 const getMetaValue = (joiDefinitions, key) => {
   if (joiDefinitions && joiDefinitions._meta) {
-    const flattened = Object.assign.apply(null, [{}].concat(joiDefinitions._meta));
+    const flattened = Object.assign.apply(
+      null,
+      [{}].concat(joiDefinitions._meta)
+    );
     return flattened[key];
   }
 };
@@ -23,7 +26,7 @@ const addParams = (transformPath, parameters, toSwagger) => {
   getParams.forEach((param) => {
     parameters.push({
       name: param,
-      in: 'path',
+      in: "path",
       ...toSwagger.properties.params.properties[param],
     });
   });
@@ -34,7 +37,7 @@ const addQuery = (_transformPath, parameters, toSwagger) => {
 
   keys.forEach((key) => {
     parameters.push({
-      in: 'query',
+      in: "query",
       name: key,
       ...toSwagger.properties.query.properties[key],
     });
@@ -46,7 +49,7 @@ const addHeaders = (_transformPath, parameters, toSwagger) => {
 
   keys.forEach((key) => {
     parameters.push({
-      in: 'header',
+      in: "header",
       name: key,
       ...toSwagger.properties.headers.properties[key],
     });
@@ -73,7 +76,7 @@ class Swagger {
     };
 
     if (this.writeToFile) {
-      return fs.writeFileSync('swagger.json', JSON.stringify(this.output));
+      return fs.writeFileSync("swagger.json", JSON.stringify(this.output));
     }
 
     return this.output;
@@ -82,8 +85,8 @@ class Swagger {
   addPaths(transformPath, method, tag, summary, parameters, responses) {
     const responsesModels = {
       200: {
-        description: 'success',
-        ...(responses || {})[200] || {},
+        description: "success",
+        ...((responses || {})[200] || {}),
       },
     };
 
@@ -92,9 +95,7 @@ class Swagger {
       [transformPath]: {
         ...this.paths[transformPath],
         [method]: {
-          tags: [
-            tag,
-          ],
+          tags: [tag],
           summary,
           responses: responsesModels,
           parameters,
@@ -105,10 +106,11 @@ class Swagger {
 
   addResponses(joiDefinitions, toSwagger) {
     const responses = {};
-    const responseName = getMetaValue(joiDefinitions.response, 'modelName') || Date.now();
+    const responseName =
+      getMetaValue(joiDefinitions.response, "modelName") || Date.now();
     this.definitions[responseName] = toSwagger.properties.response;
     responses[200] = {
-      description: joiDefinitions.response._descriptions || 'success',
+      description: joiDefinitions.response._descriptions || "success",
       schema: {
         $ref: `#/definitions/${responseName}`,
       },
@@ -125,9 +127,9 @@ class Swagger {
     this.currentRoute.push(path + method);
 
     const name = joiDefinitions.model || Date.now();
-    const tag = joiDefinitions.group || 'default';
-    const summary = joiDefinitions.description || 'No desc';
-    const modelName = getMetaValue(joiDefinitions.body, 'modelName') || name;
+    const tag = joiDefinitions.group || "default";
+    const summary = joiDefinitions.description || "No desc";
+    const modelName = getMetaValue(joiDefinitions.body, "modelName") || name;
 
     const toSwagger = j2s(joiDefinitions).swagger;
     if (toSwagger && toSwagger.properties && toSwagger.properties.body) {
@@ -139,28 +141,25 @@ class Swagger {
       responses = this.addResponses(joiDefinitions, toSwagger);
     }
 
-    const pathArray = path.split('/').filter(Boolean);
-    const transformPath = pathArray.map((p) => {
-      if (p.charAt(0) === ':') {
-        return `/{${p.substr(1)}}`;
-      }
+    const pathArray = path.split("/").filter(Boolean);
+    const transformPath = pathArray
+      .map((p) => {
+        if (p.charAt(0) === ":") {
+          return `/{${p.substr(1)}}`;
+        }
 
-      return `/${p}`;
-    }).join('');
+        return `/${p}`;
+      })
+      .join("");
 
     const parameters = [];
 
-    const {
-      body,
-      params,
-      query,
-      headers,
-    } = joiDefinitions;
+    const { body, params, query, headers } = joiDefinitions;
 
     if (body) {
       parameters.push({
-        in: 'body',
-        name: 'body',
+        in: "body",
+        name: "body",
         schema: {
           $ref: `#/definitions/${modelName}`,
         },
@@ -188,7 +187,7 @@ class Swagger {
     };
 
     if (this.writeToFile) {
-      return fs.writeFileSync('swagger.json', JSON.stringify(this.output));
+      return fs.writeFileSync("swagger.json", JSON.stringify(this.output));
     }
 
     return this.output;
@@ -202,5 +201,5 @@ module.exports = {
 
   get swaggerDocJson() {
     return new Swagger(false);
-  }
+  },
 };
